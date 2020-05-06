@@ -93,9 +93,9 @@ protected final boolean tryAcquire(int acquires) {
             for (;;) {
 	            //当前线程能够执行for循环，说明当前线程还没进入阻塞或者被唤醒
 	            //如果是被唤醒说明当前线程节点的前一个就是 head
-		        //这个时候调用 tryAcquire 尝试进入独占模式
-		        //如果成功进入独占模式就变成了head并退出循环，lock()方法就执行结束了
-		        //如果进入独占模式失败说明有其他线程抢先进入独占模式了，当前线程再重新进入阻塞状态，这就是非公平锁的情况下线程可能会重复的被唤醒挂起
+		    //这个时候调用 tryAcquire 尝试进入独占模式
+		    //如果成功进入独占模式就变成了head并退出循环，lock()方法就执行结束了
+		    //如果进入独占模式失败说明有其他线程抢先进入独占模式了，当前线程再重新进入阻塞状态，这就是非公平锁的情况下线程可能会重复的被唤醒挂起
                 final Node p = node.predecessor();
                 if (p == head && tryAcquire(arg)) {
 	                //设置当前线程节点为 head 并让原 head 退出 队列
@@ -105,10 +105,11 @@ protected final boolean tryAcquire(int acquires) {
                     failed = false;
                     return interrupted;
                 }
+		//调用LockSupport.park()挂起线程，并在被唤醒后返回线程的中断状态
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     parkAndCheckInterrupt())
                     //lock()对中断的处理并不会抛出异常，只是设置了一个标记位
-	                //lockInterruptibly()方法，这里会抛出中断异常来响应中断
+	            //lockInterruptibly()方法，这里会抛出中断异常来响应中断
                     interrupted = true;
             }
         } finally {
@@ -119,15 +120,15 @@ protected final boolean tryAcquire(int acquires) {
 ```
 #### 6.shouldParkAfterFailedAcquire
 ```java
-	//如果返回 true 则当前线程节点可以阻塞
+    //如果返回 true 则当前线程节点可以阻塞
     private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
-	    //队列中前一个节点的状态
+	//队列中前一个节点的状态
         int ws = pred.waitStatus;
         if (ws == Node.SIGNAL)
-	        //如果前一个节点的状态是释放锁后唤醒后一个节点，则当前线程则可以安全的等待被唤醒
+	    //如果前一个节点的状态是释放锁后唤醒后一个节点，则当前线程则可以安全的等待被唤醒
             return true;
         if (ws > 0) {
-	        //如果前一个节点是 cancelled 表示前面的等待线程可能因为超时或者响应了中断取消了继续阻塞，
+	    //如果前一个节点是 cancelled 表示前面的等待线程可能因为超时或者响应了中断取消了继续阻塞，
             do {
                 node.prev = pred = pred.prev;
             } while (pred.waitStatus > 0);
