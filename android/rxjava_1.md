@@ -74,3 +74,25 @@ public void call(Subscriber<? super T> child) {
 从上面可以看到最上游的 `onSubscribe` 给下游的 subscriber 设置了一个数据生产者 `FromArrayProducer`,数据生产者持有下游监听者和数据，直到最下游的监听者调用了 `producer.request` 方法，producer 则发射数据，从最上游的监听者的 `onNext` 方法开始处理数据然后再调用下层监听者的 `onNext` 方法
 
 > Observable向下onSubscribe向上subscriber向下
+
+热 Observable 例子
+```java
+val subscript = BehaviorSubject.create<Int>()
+subscript
+        .map { it -> it + 0.1 }
+        .filter { it -> it > 0 }
+        .subscribe({
+            System.out.println(it)
+        }, {
+            System.out.println(it)
+        })
+
+subscript.onNext(1)
+subscript.onNext(2)
+```
+#### 冷热之分
+`just()` 是属于冷 Observable 
+1. 触发发射数据的时机是当订阅者开始订阅并调用 `request` 方法
+2. 订阅者处理完上一个事件才会发射下一个事件
+3. 发射数据是在内部
+4. 而像 `BehaviorSubject` 的则是热 Observable 发射事件是在外部，是否发射一个新的事件不受订阅者的影响
